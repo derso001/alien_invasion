@@ -1,12 +1,14 @@
 import sys
 
 from random import randint
+from time import sleep
 
 from settings import Settings
 from ship import Ship
 from bullet import Bullet
 from alian import Alien
 from star import Star
+from game_stats import GameStats
 
 import pygame
 
@@ -15,6 +17,7 @@ class AlianInvasion:
 
     def __init__(self):
         """initializes the game and creates game resources"""
+        
 
         pygame.init()
         self.settings = Settings()
@@ -28,6 +31,9 @@ class AlianInvasion:
         pygame.display.set_caption("zalupa conia")
 
         self.bg_color = self.settings.bg_color
+
+        self.stats = GameStats(self)
+
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
@@ -111,14 +117,56 @@ class AlianInvasion:
 
     def _update_bullets(self):
         self.bullets.update()
-
+        self._check_bullet_alien_collision()
+        
         for bullet in self.bullets.copy():
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
 
     def _update_aliens(self):
+        self._check_fleet_edges()
+        self._chek_alien_bottom()
         self.aliens.update()
-                
+
+        if pygame.sprite.spritecollideany(self.ship, self.aliens):
+            self._ship_hit()        
+
+    def _ship_hit(self):
+        self.stats.ships_left -= 1
+
+        self.aliens.empty()
+        self.bullets.empty()
+
+        self._create_fleet()
+        self.ship.center_ship()
+
+        sleep(0.5)
+
+    def _chek_alien_bottom(self):
+        screen_rect = self.screen.get_rect()
+        for alien in self.aliens.sprites():
+            if alien.rect.bottom >= screen_rect.bottom:
+                self._ship_hit()
+                break
+
+    def _check_bullet_alien_collision(self):
+        collision = pygame.sprite.groupcollide(self.bullets, self.aliens, True, True)
+        
+        if not self.aliens:
+            self.bullets.empty()
+            self._create_fleet()
+
+    def _check_fleet_edges(self):
+        for alien in self.aliens.sprites():
+            if alien.check_edges():
+                self._change_fleet_direction()
+                break
+
+    def _change_fleet_direction(self):
+        for alien in self.aliens.sprites():
+            alien.rect.y += self.settings.fleet_drop_speed
+        self.settings.fleet_direction *= -1
+                 
     def _update_screen(self):
         #display the last drawn screen
 
@@ -133,6 +181,6 @@ class AlianInvasion:
         pygame.display.flip()
 
 if __name__ == "__main__":
-
+    
     ai = AlianInvasion()
     ai.run_game()
