@@ -48,9 +48,12 @@ class AlianInvasion:
         while True:
 
             self._check_event()
-            self._update_screen()
-            self.ship.update()
-            self._update_bullets()
+
+            if self.stats.game_active:
+                self._update_screen()
+                self.ship.update()
+                self._update_bullets()
+                
             self._update_aliens()
 
 
@@ -132,15 +135,19 @@ class AlianInvasion:
             self._ship_hit()        
 
     def _ship_hit(self):
-        self.stats.ships_left -= 1
+        if self.stats.ships_left > 0:
+            self.stats.ships_left -= 1
 
-        self.aliens.empty()
-        self.bullets.empty()
+            self.aliens.empty()
+            self.bullets.empty()
 
-        self._create_fleet()
-        self.ship.center_ship()
+            self._create_fleet()
+            self.ship.center_ship()
 
-        sleep(0.5)
+            sleep(0.5)
+
+        else:
+            self.stats.game_active = False
 
     def _chek_alien_bottom(self):
         screen_rect = self.screen.get_rect()
